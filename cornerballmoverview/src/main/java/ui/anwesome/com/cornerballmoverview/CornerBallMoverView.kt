@@ -139,4 +139,28 @@ class CornerBallMoverView (ctx : Context) : View(ctx) {
             }
         }
     }
+
+    data class Renderer (var view : CornerBallMoverView) {
+
+        val cornerBallContainer = CornerBallContainer(0)
+
+        val animator : Animator = Animator(view)
+
+        fun render(canvas : Canvas, paint : Paint) {
+            canvas.drawColor(Color.parseColor("#212121"))
+            cornerBallContainer.draw(canvas, paint)
+            animator.animate {
+                cornerBallContainer.update {
+                    animator.stop()
+                }
+            }
+        }
+
+        fun handleTap() {
+            cornerBallContainer.startUpdating {
+                animator.start()
+            }
+        }
+    }
+
 }
