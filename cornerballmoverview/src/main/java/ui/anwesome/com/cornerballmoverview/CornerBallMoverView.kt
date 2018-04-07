@@ -40,8 +40,8 @@ class CornerBallMoverView (ctx : Context) : View(ctx) {
             if (Math.abs(scales[j] - prevScale) > 1) {
                 scales[j] = prevScale + dir
                 j += dir.toInt()
-                dir = 0f
                 if (j == scales.size) {
+                    dir = 0f
                     stopcb()
                 }
             }
@@ -88,12 +88,12 @@ class CornerBallMoverView (ctx : Context) : View(ctx) {
         fun draw(canvas : Canvas, paint : Paint) {
             val w = canvas.width.toFloat()
             val h = canvas.height.toFloat()
-            val r : Float = Math.min(w, h)/10
-            for (i in 0..1) {
+            val r : Float = Math.min(w, h)/20
+            for (i in 0..(1 - state.scales[0].toInt())) {
                 val ox : Float = i * (w + 2 * r) - (r+r/10)
                 canvas.save()
                 canvas.translate(ox + (w/2 - ox) * state.scales[0], h - (h/2 * state.scales[0] + h/2 * state.scales[2]))
-                canvas.scale(state.scales[1], state.scales[1])
+                canvas.scale(1 + state.scales[1], 1 + state.scales[1])
                 canvas.drawCircle(0f, 0f, r, paint)
                 canvas.restore()
             }
