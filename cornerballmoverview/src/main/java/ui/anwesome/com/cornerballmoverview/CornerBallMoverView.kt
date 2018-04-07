@@ -8,6 +8,8 @@ import android.content.Context
 import android.graphics.*
 import android.view.View
 import android.view.MotionEvent
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 class CornerBallMoverView (ctx : Context) : View(ctx) {
 
@@ -35,6 +37,7 @@ class CornerBallMoverView (ctx : Context) : View(ctx) {
             if (Math.abs(scales[j] - prevScale) > 1) {
                 scales[j] = prevScale + dir
                 j += dir.toInt()
+                dir = 0f
                 if (j == scales.size) {
                     stopcb()
                 }
@@ -42,9 +45,97 @@ class CornerBallMoverView (ctx : Context) : View(ctx) {
         }
 
         fun startUpdating(startcb : () -> Unit) {
-            if (dir == 0f) {
+            if (dir == 0f && prevScale == 0f) {
                 dir = 1 - 2 * prevScale
                 startcb()
+            }
+        }
+    }
+
+    data class Animator (var view : View, var animated : Boolean = false) {
+
+        fun animate (updatecb : () -> Unit) {
+            if (animated) {
+                updatecb()
+                try {
+                    Thread.sleep(50)
+                    view.invalidate()
+                }
+                catch (ex : Exception) {
+
+                }
+            }
+        }
+
+        fun start () {
+            if (!animated) {
+                animated = true
+                view.postInvalidate()
+            }
+        }
+
+        fun stop() {
+            if (animated) {
+                animated = false
+            }
+        }
+    }
+
+    data class CornerBall(var i : Int, val state : State = State()) {
+        fun draw(canvas : Canvas, paint : Paint) {
+            val w = canvas.width.toFloat()
+            val h = canvas.height.toFloat()
+            val r : Float = Math.min(w, h)/10
+            for (i in 0..1) {
+                val ox : Float = i * (w + 2 * r) - (r+r/10)
+                canvas.save()
+                canvas.translate(ox + (w/2 - ox) * state.scales[0], h - (h/2 * state.scales[0] + h/2 * state.scales[2]))
+                canvas.scale(state.scales[1], state.scales[1])
+                canvas.drawCircle(0f, 0f, r, paint)
+                canvas.restore()
+            }
+        }
+
+        fun startUpdating(startcb : () -> Unit) {
+            state.startUpdating(startcb)
+        }
+
+        fun update(stopcb : () -> Unit) {
+            state.update(stopcb)
+        }
+    }
+
+    data class CornerBallContainer (var i : Int) {
+
+        val atomicId : AtomicInteger = AtomicInteger(0)
+
+        val cornerBalls : ConcurrentLinkedQueue<CornerBall> = ConcurrentLinkedQueue()
+
+        fun draw(canvas : Canvas, paint : Paint) {
+            paint.color = Color.parseColor("#f44336")
+            cornerBalls.forEach {
+                it.draw(canvas, paint)
+            }
+        }
+
+        fun update (stopcb : () -> Unit) {
+            cornerBalls.forEach {
+                it.update {
+                    cornerBalls.remove(it)
+                    if (cornerBalls.size == 0) {
+                        stopcb()
+                    }
+                }
+            }
+        }
+
+        fun startUpdating (startcb : () -> Unit) {
+            val cornerBall : CornerBall = CornerBall(atomicId.incrementAndGet())
+            cornerBalls.add(cornerBall)
+            cornerBall.startUpdating {
+                if (cornerBalls.size == 1) {
+                    startcb()
+                }
             }
         }
     }
