@@ -4,6 +4,7 @@ package ui.anwesome.com.cornerballmoverview
  * Created by anweshmishra on 07/04/18.
  */
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.*
 import android.view.View
@@ -165,4 +166,11 @@ class CornerBallMoverView (ctx : Context) : View(ctx) {
         }
     }
 
+    companion object {
+        fun create (activity : Activity) : CornerBallMoverView {
+            val view : CornerBallMoverView = CornerBallMoverView(activity)
+            activity.setContentView(view)
+            return view
+        }
+    }
 }
